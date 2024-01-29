@@ -1,0 +1,21 @@
+{
+  "name": "matrix-bot-test",
+  "version": "1.0.1",
+  "description": "matrix bot test",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "tsc --watch *.ts",
+    "start": "node index.js"
+  },
+  "author": "jason andrew",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "http": "^0.0.1-security",
+    "matrix-bot-sdk": "^0.7.0",
+    "node-base64-image": "^2.0.5",
+    "nodemon": "^3.0.3",
+    "typescript": "^5.2.2"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "user_id": "@stable-diffusion-bot:medienhaus.udk-berlin.de",
+  "access_token": "syt_c3RhYmxlLWRpZmZ1c2lvbi1ib3Q_lGUirKuaaUYZtYjeZyRk_32iunY",
+  "home_server": "medienhaus.udk-berlin.de",
+  "device_id": "SWTUFFCWCS",
+  "well_known": {
+    "m.homeserver": {
+      "base_url": "https://medienhaus.udk-berlin.de/"
+    }
+  },
+  "syncToken": "s575244_3727195_7322_1451851_519659_618_84336_3105880_0_2",
+  "filter": null,
+  "appserviceUsers": {},
+  "appserviceTransactions": {},
+  "kvStore": {}
+}
