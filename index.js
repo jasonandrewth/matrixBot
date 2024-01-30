@@ -241,6 +241,48 @@ async function saveImages(response, outputDir) {
 
 const imagePath = "./decodedImage.png";
 
+const uploadMatrix = function (roomId, imageBuffer) {
+  if (client) {
+    client.sendMessage(roomId, {
+      msgtype: "m.notice",
+      body: "image coming",
+    });
+
+    client
+      .uploadContent(imageBuffer, {
+        name: "test-image.png",
+        type: "image/png",
+      })
+      .then((response) => {
+        console.log("res", response);
+        const imageUrl = response;
+        console.log("url", imageUrl);
+
+        // Send a message with the image URL
+        return client.sendMessage(roomId, {
+          body: "New image made!",
+          msgtype: "m.image",
+          url: imageUrl,
+          info: {
+            mimetype: "image/png",
+            size: imageBuffer.length,
+          },
+        });
+      })
+      .then(() => {
+        console.log("Image sent successfully");
+      })
+      .catch((error) => {
+        console.error("Error sending image:", error);
+      });
+    // .finally(() => {
+    //   client.stop();
+    // });
+  } else {
+    console.error("No Client");
+  }
+};
+
 // async function SendRequest(datatosend, roomId) {
 //   let data = "";
 //   function OnResponse(response) {
@@ -356,10 +398,33 @@ client.on("room.message", async (roomId, event) => {
   if (body.startsWith("!image")) {
     console.log("trying comfy prompt");
     const replyText = body.substring("!image".length).trim();
+
+    // Use a regular expression to match "size-" followed by one or more digits
+    const matchSize = replyText.match(/size-(\d+)/);
+    const matchOrientation = replyText.match(/orientation-(\d+)/);
+    // Check if there's a match and extract the number
+    const sizeNumber = matchSize ? parseInt(matchSize[1], 10) : null;
+    const orientationNumber = matchOrientation
+      ? parseInt(matchOrientation[1], 10)
+      : null;
+
     // Set the text prompt for our positive CLIPTextEncode
     promptJSON.prompt["6"].inputs.text =
       `cinematic photo of ${replyText}, photograph, film, best quality, highres` ??
       "Error sign";
+
+    // Set dimensions
+    if (sizeNumber) {
+      if (sizeNumber === 2) {
+        promptJSON.prompt["5"].inputs.width = 1024;
+        promptJSON.prompt["5"].inputs.height = 1024;
+      }
+    }
+    if (orientationNumber) {
+      if (orientationNumber === 2) {
+        promptJSON.prompt["5"].inputs.width *= 2;
+      }
+    }
 
     // Set the seed for our KSampler node
     promptJSON.prompt["3"].inputs.seed = 5;
@@ -372,44 +437,8 @@ client.on("room.message", async (roomId, event) => {
     const imageBuffer = fs.readFileSync("./results/currentImage.png");
 
     /*
-        MOVE THIS IN FUNCTION
-        */
-    if (client) {
-      client.sendMessage(roomId, {
-        msgtype: "m.notice",
-        body: "image coming",
-      });
-
-      client
-        .uploadContent(imageBuffer, {
-          name: "test-image.png",
-          type: "image/png",
-        })
-        .then((response) => {
-          console.log("res", response);
-          const imageUrl = response;
-          console.log("url", imageUrl);
-
-          // Send a message with the image URL
-          return client.sendMessage(roomId, {
-            body: "New image made!",
-            msgtype: "m.image",
-            url: imageUrl,
-            info: {
-              mimetype: "image/png",
-              size: imageBuffer.length,
-            },
-          });
-        })
-        .then(() => {
-          console.log("Image sent successfully");
-        })
-        .catch((error) => {
-          console.error("Error sending image:", error);
-        });
-      // .finally(() => {
-      //   client.stop();
-      // });
-    }
+      MOVE THIS IN FUNCTION
+    */
+    uploadMatrix(roomId, imageBuffer);
   }
 });
