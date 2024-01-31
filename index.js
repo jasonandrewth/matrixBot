@@ -424,6 +424,7 @@ client.on("room.message", async (roomId, event) => {
 
     // Use a regular expression to match "--param-" followed by one or more digits
     const matchSize = replyText.match(/--size-(\d+)/);
+    const matchModel = replyText.match(/-sd(\d+)/);
     const matchOrientation = replyText.match(/--orientation-(\d+)/);
     const matchSeed = replyText.match(/--seed-(\d+)/);
     const matchAspect = replyText.match(/(\d+):(\d+)/);
@@ -438,6 +439,11 @@ client.on("room.message", async (roomId, event) => {
     promptJSONcopy.prompt["6"].inputs.text =
       `cinematic photo of ${replyText}, photograph, film, best quality, highres` ??
       "Error sign";
+
+    if (!matchModel || matchModel !== "15") {
+      promptJSONcopy.prompt["4"].inputs.ckpt_name =
+        "juggernautXL_v8Rundiffusion.safetensors";
+    }
 
     // Set dimensions
     if (sizeNumber) {
@@ -512,6 +518,13 @@ client.on("room.message", async (roomId, event) => {
     /*
       MOVE THIS IN FUNCTION
     */
+    if (client) {
+      client.sendMessage(roomId, {
+        msgtype: "m.notice",
+        body: `image coming: Anfrage ${sender} }`,
+      });
+    }
+
     uploadMatrix(roomId, imageBuffer);
   }
 });
