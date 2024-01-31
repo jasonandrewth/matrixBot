@@ -83,7 +83,7 @@ const promptJSON = {
     },
     7: {
       inputs: {
-        text: "drawing, painting, sketch, bad quality, low resolution, blurry",
+        text: "drawing, painting, sketch, bad quality, low resolution, blurry, NSFW, nude, porn",
         clip: ["4", 1],
       },
       class_type: "CLIPTextEncode",
@@ -149,7 +149,7 @@ async function getHistory(promptId) {
       throw new Error(JSON.stringify(json));
     }
 
-    console.log("prompt json in history", promptId, json);
+    // console.log("prompt json in history", promptId, json);
 
     return json;
   } catch (error) {
@@ -168,7 +168,7 @@ async function getImage(filename, subfolder, type) {
         })
     );
     const blob = await res.blob();
-    console.log("getimage blob: ", res);
+    // console.log("getimage blob: ", res);
     return blob;
   } catch (error) {
     console.log("error in getImage");
@@ -189,7 +189,7 @@ async function getImages(prompt) {
     const historyRes = await getHistory(promptId);
     const history = historyRes[promptId];
 
-    console.log("history: ", history);
+    // console.log("history: ", history);
 
     // Populate output images
     for (const nodeId of Object.keys(history.outputs)) {
@@ -360,6 +360,27 @@ const uploadMatrix = function (roomId, imageBuffer) {
 // console.log("baser", string);
 client.start().then(() => console.log("Client started!"));
 
+//UTIL
+
+function calculateAspectDimensions(x, y, maxSize) {
+  const powerOfTwo = (num) => Math.pow(2, Math.ceil(Math.log2(num)));
+
+  // Split the aspect ratio into x and y
+  // const [x, y] = aspectRatio.split(":").map(Number);
+
+  console.log("running function", maxSize, x, y);
+
+  const aspectRatio = x / y;
+  const exponent = Math.floor(Math.log2(maxSize / aspectRatio));
+
+  const newWidth = Math.pow(2, exponent);
+  const newHeight = newWidth / aspectRatio;
+
+  console.log("calc dimensions", newWidth, newHeight);
+
+  return { width: newWidth, height: newHeight };
+}
+
 client.on("room.message", async (roomId, event) => {
   if (!event["content"]) return;
   const sender = event["sender"];
@@ -395,18 +416,21 @@ client.on("room.message", async (roomId, event) => {
   //   // });
   // }
 
-  if (body.startsWith("!image")) {
+  if (body.startsWith("!photo")) {
     console.log("trying comfy prompt");
     const replyText = body.substring("!image".length).trim();
 
-    // Use a regular expression to match "size-" followed by one or more digits
-    const matchSize = replyText.match(/size-(\d+)/);
-    const matchOrientation = replyText.match(/orientation-(\d+)/);
+    // Use a regular expression to match "--param-" followed by one or more digits
+    const matchSize = replyText.match(/--size-(\d+)/);
+    const matchOrientation = replyText.match(/--orientation-(\d+)/);
+    const matchSeed = replyText.match(/--seed-(\d+)/);
+    const matchAspect = replyText.match(/(\d+):(\d+)/);
     // Check if there's a match and extract the number
     const sizeNumber = matchSize ? parseInt(matchSize[1], 10) : null;
     const orientationNumber = matchOrientation
       ? parseInt(matchOrientation[1], 10)
       : null;
+    const seed = matchSeed ? parseInt(matchSeed[1], 10) : 5;
 
     // Set the text prompt for our positive CLIPTextEncode
     promptJSON.prompt["6"].inputs.text =
@@ -415,19 +439,66 @@ client.on("room.message", async (roomId, event) => {
 
     // Set dimensions
     if (sizeNumber) {
-      if (sizeNumber === 2) {
-        promptJSON.prompt["5"].inputs.width = 1024;
-        promptJSON.prompt["5"].inputs.height = 1024;
+      console.log("size works", sizeNumber);
+      switch (sizeNumber) {
+        case 1:
+          promptJSON.prompt["5"].inputs.width = 512;
+          promptJSON.prompt["5"].inputs.height = 512;
+          break;
+        case 2:
+          promptJSON.prompt["5"].inputs.width = 768;
+          promptJSON.prompt["5"].inputs.height = 768;
+          break;
+        case 3:
+          promptJSON.prompt["5"].inputs.width = 1024;
+          promptJSON.prompt["5"].inputs.height = 1024;
+          break;
+        default:
+          promptJSON.prompt["5"].inputs.width = 512;
+          promptJSON.prompt["5"].inputs.height = 512;
       }
     }
     if (orientationNumber) {
-      if (orientationNumber === 2) {
-        promptJSON.prompt["5"].inputs.width *= 2;
+      switch (orientationNumber) {
+        case 1:
+          break;
+        case 2:
+          promptJSON.prompt["5"].inputs.width = Math.round(
+            promptJSON.prompt["5"].inputs.width * 1.5
+          );
+          break;
+        case 3:
+          promptJSON.prompt["5"].inputs.height = Math.round(
+            promptJSON.prompt["5"].inputs.height * 1.5
+          );
+          break;
+        default:
+          promptJSON.prompt["5"].inputs.width = 512;
+          promptJSON.prompt["5"].inputs.height = 512;
+      }
+    }
+
+    if (matchAspect) {
+      console.log("match aspect", matchAspect[0]);
+      const [x, y] = matchAspect[0].split(":").map(Number);
+      console.log("x,y", x, y);
+      const { width, height } = calculateAspectDimensions(
+        x,
+        y,
+        Math.max(
+          promptJSON.prompt["5"].inputs.width,
+          promptJSON.prompt["5"].inputs.height
+        )
+      );
+
+      if (width && height) {
+        promptJSON.prompt["5"].inputs.width = width;
+        promptJSON.prompt["5"].inputs.height = height;
       }
     }
 
     // Set the seed for our KSampler node
-    promptJSON.prompt["3"].inputs.seed = 5;
+    promptJSON.prompt["3"].inputs.seed = seed;
     console.log("test string: ", promptJSON.prompt["6"].inputs.text);
     const comfyTestBlob = await getImages(promptJSON);
     console.log("comfy", comfyTestBlob);
