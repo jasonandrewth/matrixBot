@@ -18,19 +18,6 @@ const client = new MatrixClient(
 );
 AutojoinRoomsMixin.setupOnClient(client);
 
-// FETCH IMAGE STUFF
-// API endpoint and data to send
-// const apiUrl = "http://IP:7861/sdapi/v1/txt2img";
-
-// Set up the request options
-// const options = {
-//   method: "POST",
-//   headers: {
-//     "Content-Type": "application/x-www-form-urlencoded",
-//   },
-//   body: postDataString,
-// };
-
 const promptJSON = {
   prompt: {
     3: {
@@ -113,6 +100,19 @@ const promptJSON = {
     },
   },
 };
+
+// FETCH IMAGE STUFF
+// API endpoint and data to send
+// const apiUrl = "http://IP:7861/sdapi/v1/txt2img";
+
+// Set up the request options
+// const options = {
+//   method: "POST",
+//   headers: {
+//     "Content-Type": "application/x-www-form-urlencoded",
+//   },
+//   body: postDataString,
+// };
 
 const comfyURL = `${process.env.ENDPOINT}:${process.env.PORT}`;
 
@@ -420,6 +420,8 @@ client.on("room.message", async (roomId, event) => {
     console.log("trying comfy prompt");
     const replyText = body.substring("!image".length).trim();
 
+    const promptJSONcopy = { ...promptJSON };
+
     // Use a regular expression to match "--param-" followed by one or more digits
     const matchSize = replyText.match(/--size-(\d+)/);
     const matchOrientation = replyText.match(/--orientation-(\d+)/);
@@ -433,7 +435,7 @@ client.on("room.message", async (roomId, event) => {
     const seed = matchSeed ? parseInt(matchSeed[1], 10) : 5;
 
     // Set the text prompt for our positive CLIPTextEncode
-    promptJSON.prompt["6"].inputs.text =
+    promptJSONcopy.prompt["6"].inputs.text =
       `cinematic photo of ${replyText}, photograph, film, best quality, highres` ??
       "Error sign";
 
@@ -442,20 +444,20 @@ client.on("room.message", async (roomId, event) => {
       console.log("size works", sizeNumber);
       switch (sizeNumber) {
         case 1:
-          promptJSON.prompt["5"].inputs.width = 512;
-          promptJSON.prompt["5"].inputs.height = 512;
+          promptJSONcopy.prompt["5"].inputs.width = 512;
+          promptJSONcopy.prompt["5"].inputs.height = 512;
           break;
         case 2:
-          promptJSON.prompt["5"].inputs.width = 768;
-          promptJSON.prompt["5"].inputs.height = 768;
+          promptJSONcopy.prompt["5"].inputs.width = 768;
+          promptJSONcopy.prompt["5"].inputs.height = 768;
           break;
         case 3:
-          promptJSON.prompt["5"].inputs.width = 1024;
-          promptJSON.prompt["5"].inputs.height = 1024;
+          promptJSONcopy.prompt["5"].inputs.width = 1024;
+          promptJSONcopy.prompt["5"].inputs.height = 1024;
           break;
         default:
-          promptJSON.prompt["5"].inputs.width = 512;
-          promptJSON.prompt["5"].inputs.height = 512;
+          promptJSONcopy.prompt["5"].inputs.width = 512;
+          promptJSONcopy.prompt["5"].inputs.height = 512;
       }
     }
     if (orientationNumber) {
@@ -463,18 +465,18 @@ client.on("room.message", async (roomId, event) => {
         case 1:
           break;
         case 2:
-          promptJSON.prompt["5"].inputs.width = Math.round(
-            promptJSON.prompt["5"].inputs.width * 1.5
+          promptJSONcopy.prompt["5"].inputs.width = Math.round(
+            promptJSONcopy.prompt["5"].inputs.width * 1.5
           );
           break;
         case 3:
-          promptJSON.prompt["5"].inputs.height = Math.round(
-            promptJSON.prompt["5"].inputs.height * 1.5
+          promptJSONcopy.prompt["5"].inputs.height = Math.round(
+            promptJSONcopy.prompt["5"].inputs.height * 1.5
           );
           break;
         default:
-          promptJSON.prompt["5"].inputs.width = 512;
-          promptJSON.prompt["5"].inputs.height = 512;
+          promptJSONcopy.prompt["5"].inputs.width = 512;
+          promptJSONcopy.prompt["5"].inputs.height = 512;
       }
     }
 
@@ -486,21 +488,21 @@ client.on("room.message", async (roomId, event) => {
         x,
         y,
         Math.max(
-          promptJSON.prompt["5"].inputs.width,
-          promptJSON.prompt["5"].inputs.height
+          promptJSONcopy.prompt["5"].inputs.width,
+          promptJSONcopy.prompt["5"].inputs.height
         )
       );
 
       if (width && height) {
-        promptJSON.prompt["5"].inputs.width = width;
-        promptJSON.prompt["5"].inputs.height = height;
+        promptJSONcopy.prompt["5"].inputs.width = width;
+        promptJSONcopy.prompt["5"].inputs.height = height;
       }
     }
 
     // Set the seed for our KSampler node
-    promptJSON.prompt["3"].inputs.seed = seed;
+    promptJSONcopy.prompt["3"].inputs.seed = seed;
     console.log("test string: ", promptJSON.prompt["6"].inputs.text);
-    const comfyTestBlob = await getImages(promptJSON);
+    const comfyTestBlob = await getImages(promptJSONcopy);
     console.log("comfy", comfyTestBlob);
 
     const outputDir = "./results/";
