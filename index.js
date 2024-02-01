@@ -177,7 +177,7 @@ async function getImage(filename, subfolder, type) {
 }
 
 async function getImages(prompt) {
-  console.log(prompt);
+  // console.log(prompt);
 
   const queue = await queuePrompt(prompt);
   const promptId = queue.prompt_id;
@@ -249,7 +249,7 @@ const uploadMatrix = function (roomId, imageBuffer) {
         type: "image/png",
       })
       .then((response) => {
-        console.log("res", response);
+        // console.log("res", response);
         const imageUrl = response;
         console.log("url", imageUrl);
 
@@ -419,7 +419,7 @@ client.on("room.message", async (roomId, event) => {
 
     // Use a regular expression to match "--param-" followed by one or more digits
     const matchSize = replyText.match(/--size-(\d+)/);
-    const matchModel = replyText.match(/--sd(\d+)/);
+    const matchModel = replyText.match(/--sd-(\d+)/);
     const matchOrientation = replyText.match(/--orientation-(\d+)/);
     const matchSeed = replyText.match(/--seed-(\d+)/);
     const matchAspect = replyText.match(/(\d+):(\d+)/);
@@ -428,8 +428,10 @@ client.on("room.message", async (roomId, event) => {
     const orientationNumber = matchOrientation
       ? parseInt(matchOrientation[1], 10)
       : null;
-    const seed = matchSeed ? parseInt(matchSeed[1], 10) : -1;
-    modelNumber = matchModel ? parseInt(matchModel[1], 10) : 0;
+    const seed = matchSeed ? parseInt(matchSeed[1], 10) : 1;
+    const modelNumber = matchModel ? parseInt(matchModel[1], 10) : 0;
+
+    console.log(matchModel);
 
     // Set the text prompt for our positive CLIPTextEncode
     promptJSONcopy.prompt["6"].inputs.text =
@@ -437,6 +439,7 @@ client.on("room.message", async (roomId, event) => {
       "Error sign";
 
     if (modelNumber === 15) {
+      console.log("model detected", matchModel);
       promptJSONcopy.prompt["4"].inputs.ckpt_name =
         "realisticVisionV40_v4NoVAE.safetensors";
     }
@@ -503,7 +506,7 @@ client.on("room.message", async (roomId, event) => {
 
     // Set the seed for our KSampler node
     promptJSONcopy.prompt["3"].inputs.seed = seed;
-    console.log("test string: ", promptJSON.prompt["6"].inputs.text);
+    // console.log("test string: ", promptJSON.prompt["6"].inputs.text);
     const comfyTestBlob = await getImages(promptJSONcopy);
     console.log("comfy", comfyTestBlob);
 
