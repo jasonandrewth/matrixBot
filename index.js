@@ -467,11 +467,12 @@ client.on("room.message", async (roomId, event) => {
           promptJSONcopy.prompt["5"].inputs.width = 512;
           promptJSONcopy.prompt["5"].inputs.height = 512;
       }
+    } else {
+      promptJSONcopy.prompt["5"].inputs.width = 512;
+      promptJSONcopy.prompt["5"].inputs.height = 512;
     }
     if (orientationNumber) {
       switch (orientationNumber) {
-        case 1:
-          break;
         case 2:
           promptJSONcopy.prompt["5"].inputs.width = Math.round(
             promptJSONcopy.prompt["5"].inputs.width * 1.5
@@ -486,6 +487,9 @@ client.on("room.message", async (roomId, event) => {
           promptJSONcopy.prompt["5"].inputs.width = 512;
           promptJSONcopy.prompt["5"].inputs.height = 512;
       }
+    } else if (!sizeNumber) {
+      promptJSONcopy.prompt["5"].inputs.width = 512;
+      promptJSONcopy.prompt["5"].inputs.height = 512;
     }
 
     if (matchAspect) {
