@@ -518,7 +518,7 @@ client.on("room.message", async (roomId, event) => {
       const senderName = sender.replace(/:.*$/, "");
       client.sendMessage(roomId, {
         msgtype: "m.notice",
-        body: `image coming: Anfrage ${senderName} }`,
+        body: `image coming: Anfrage ${senderName}`,
       });
     }
 
