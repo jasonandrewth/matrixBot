@@ -243,11 +243,6 @@ const imagePath = "./decodedImage.png";
 
 const uploadMatrix = function (roomId, imageBuffer) {
   if (client) {
-    client.sendMessage(roomId, {
-      msgtype: "m.notice",
-      body: "image coming",
-    });
-
     client
       .uploadContent(imageBuffer, {
         name: "test-image.png",
@@ -519,9 +514,11 @@ client.on("room.message", async (roomId, event) => {
       MOVE THIS IN FUNCTION
     */
     if (client) {
+      // Use replace to remove the part after the colon
+      const senderName = sender.replace(/:.*$/, "");
       client.sendMessage(roomId, {
         msgtype: "m.notice",
-        body: `image coming: Anfrage ${sender} }`,
+        body: `image coming: Anfrage ${senderName} }`,
       });
     }
 
