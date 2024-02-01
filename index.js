@@ -442,6 +442,9 @@ client.on("room.message", async (roomId, event) => {
       console.log("model detected", matchModel);
       promptJSONcopy.prompt["4"].inputs.ckpt_name =
         "realisticVisionV40_v4NoVAE.safetensors";
+    } else {
+      promptJSONcopy.prompt["4"].inputs.ckpt_name =
+        "juggernautXL_v8Rundiffusion.safetensors";
     }
 
     // Set dimensions
