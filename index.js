@@ -40,7 +40,7 @@ const promptJSON = {
     },
     4: {
       inputs: {
-        ckpt_name: "realisticVisionV40_v4NoVAE.safetensors",
+        ckpt_name: "juggernautXL_v8Rundiffusion.safetensors",
       },
       class_type: "CheckpointLoaderSimple",
       _meta: {
@@ -419,7 +419,7 @@ client.on("room.message", async (roomId, event) => {
 
     // Use a regular expression to match "--param-" followed by one or more digits
     const matchSize = replyText.match(/--size-(\d+)/);
-    const matchModel = replyText.match(/-sd(\d+)/);
+    const matchModel = replyText.match(/--sd(\d+)/);
     const matchOrientation = replyText.match(/--orientation-(\d+)/);
     const matchSeed = replyText.match(/--seed-(\d+)/);
     const matchAspect = replyText.match(/(\d+):(\d+)/);
@@ -428,16 +428,17 @@ client.on("room.message", async (roomId, event) => {
     const orientationNumber = matchOrientation
       ? parseInt(matchOrientation[1], 10)
       : null;
-    const seed = matchSeed ? parseInt(matchSeed[1], 10) : 5;
+    const seed = matchSeed ? parseInt(matchSeed[1], 10) : -1;
+    modelNumber = matchModel ? parseInt(matchModel[1], 10) : 0;
 
     // Set the text prompt for our positive CLIPTextEncode
     promptJSONcopy.prompt["6"].inputs.text =
       `cinematic photo of ${replyText}, photograph, film, best quality, highres` ??
       "Error sign";
 
-    if (!matchModel || matchModel !== "15") {
+    if (modelNumber === 15) {
       promptJSONcopy.prompt["4"].inputs.ckpt_name =
-        "juggernautXL_v8Rundiffusion.safetensors";
+        "realisticVisionV40_v4NoVAE.safetensors";
     }
 
     // Set dimensions
