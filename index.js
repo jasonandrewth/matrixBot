@@ -420,6 +420,7 @@ client.on("room.message", async (roomId, event) => {
     // Use a regular expression to match "--param-" followed by one or more digits
     const matchSize = replyText.match(/--size-(\d+)/);
     const matchModel = replyText.match(/--sd-(\d+)/);
+    const matchNegative = replyText.match(/--negative-\[([^)]+)\]/);
     const matchOrientation = replyText.match(/--orientation-(\d+)/);
     const matchSeed = replyText.match(/--seed-(\d+)/);
     const matchAspect = replyText.match(/(\d+):(\d+)/);
@@ -430,8 +431,6 @@ client.on("room.message", async (roomId, event) => {
       : null;
     const seed = matchSeed ? parseInt(matchSeed[1], 10) : 1;
     const modelNumber = matchModel ? parseInt(matchModel[1], 10) : 0;
-
-    console.log(matchModel);
 
     // Set the text prompt for our positive CLIPTextEncode
     promptJSONcopy.prompt["6"].inputs.text =
@@ -509,6 +508,18 @@ client.on("room.message", async (roomId, event) => {
         promptJSONcopy.prompt["5"].inputs.width = width;
         promptJSONcopy.prompt["5"].inputs.height = height;
       }
+    }
+
+    if (matchNegative) {
+      const negativePrompts = matchNegative[1];
+      if (!negativePrompts) return;
+
+      promptJSONcopy.prompt["7"].inputs.text.concat(negativePrompts.toString());
+      console.log(
+        "neg p",
+        promptJSONcopy.prompt["7"].inputs.text,
+        negativePrompts
+      );
     }
 
     // Set the seed for our KSampler node

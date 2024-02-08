@@ -1,7 +1,8 @@
 # Ignore node_modules
 node_modules/
 # Ignore images
-results/*
+results/*.png
+results/*.jpg
 
 # Ignore environment files
 .env
