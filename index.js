@@ -18,7 +18,7 @@ const client = new MatrixClient(
 );
 AutojoinRoomsMixin.setupOnClient(client);
 
-const promptJSON = {
+const promptPhotoJSON = {
   prompt: {
     3: {
       inputs: {
@@ -71,6 +71,89 @@ const promptJSON = {
     7: {
       inputs: {
         text: "drawing, painting, sketch, bad quality, low resolution, blurry, NSFW, nude, porn",
+        clip: ["4", 1],
+      },
+      class_type: "CLIPTextEncode",
+      _meta: {
+        title: "CLIP Text Encode (Prompt)",
+      },
+    },
+    8: {
+      inputs: {
+        samples: ["3", 0],
+        vae: ["4", 2],
+      },
+      class_type: "VAEDecode",
+      _meta: {
+        title: "VAE Decode",
+      },
+    },
+    9: {
+      inputs: {
+        filename_prefix: "ComfyUI",
+        images: ["8", 0],
+      },
+      class_type: "SaveImage",
+      _meta: {
+        title: "Save Image",
+      },
+    },
+  },
+};
+
+const promptDrawingJSON = {
+  prompt: {
+    3: {
+      inputs: {
+        seed: 73207829680144,
+        steps: 20,
+        cfg: 8,
+        sampler_name: "euler",
+        scheduler: "normal",
+        denoise: 1,
+        model: ["4", 0],
+        positive: ["6", 0],
+        negative: ["7", 0],
+        latent_image: ["5", 0],
+      },
+      class_type: "KSampler",
+      _meta: {
+        title: "KSampler",
+      },
+    },
+    4: {
+      inputs: {
+        ckpt_name: "albedobaseXL_v21.safetensors",
+      },
+      class_type: "CheckpointLoaderSimple",
+      _meta: {
+        title: "Load Checkpoint",
+      },
+    },
+    5: {
+      inputs: {
+        width: 512,
+        height: 512,
+        batch_size: 1,
+      },
+      class_type: "EmptyLatentImage",
+      _meta: {
+        title: "Empty Latent Image",
+      },
+    },
+    6: {
+      inputs: {
+        text: "drawing of wet floor in berlin ubahn",
+        clip: ["4", 1],
+      },
+      class_type: "CLIPTextEncode",
+      _meta: {
+        title: "CLIP Text Encode (Prompt)",
+      },
+    },
+    7: {
+      inputs: {
+        text: "photography, NSFW, nude, porn",
         clip: ["4", 1],
       },
       class_type: "CLIPTextEncode",
@@ -278,81 +361,6 @@ const uploadMatrix = function (roomId, imageBuffer) {
   }
 };
 
-// async function SendRequest(datatosend, roomId) {
-//   let data = "";
-//   function OnResponse(response) {
-//     console.log("response");
-//     console.log(response);
-
-//     response.on("data", function (chunk) {
-//       data += chunk; //Append each chunk of data received to this variable.
-//     });
-//     response.on("end", function () {
-//       console.log("end");
-//       data = data;
-//       const base64String = JSON.parse(data).images[0];
-//       const base64Data = base64String.replace(/^data:image\/\w+;base64,/, "");
-
-//       // Decode the Base64 string into a Buffer
-//       const buffer = Buffer.from(base64Data, "base64");
-
-//       // Save the Buffer to a file (optional)
-//       fs.writeFileSync("decodedImage.png", buffer);
-
-//       const imageBuffer = fs.readFileSync(imagePath);
-
-//       if (client) {
-//         client.sendMessage(roomId, {
-//           msgtype: "m.notice",
-//           body: "image coming",
-//         });
-
-//         client
-//           .uploadContent(imageBuffer, {
-//             name: "test-image.png",
-//             type: "image/png",
-//           })
-//           .then((response) => {
-//             console.log("res", response);
-//             const imageUrl = response;
-//             console.log("url", imageUrl);
-
-//             // Send a message with the image URL
-//             return client.sendMessage(roomId, {
-//               body: "Check out this image!",
-//               msgtype: "m.image",
-//               url: imageUrl,
-//               info: {
-//                 mimetype: "image/png",
-//                 size: buffer.length,
-//               },
-//             });
-//           })
-//           .then(() => {
-//             console.log("Image sent successfully");
-//           })
-//           .catch((error) => {
-//             console.error("Error sending image:", error);
-//           });
-//         // .finally(() => {
-//         //   client.stop();
-//         // });
-//       } else {
-//         console.error("no client");
-//       }
-
-//       return data;
-//     });
-//   }
-
-//   var request = http.request(urlparams, OnResponse); //Create a request object.
-
-//   request.write(datatosend); //Send off the request.
-//   request.end(); //End the request.
-
-//   return data;
-// }
-// console.log("baser", string);
 client.start().then(() => console.log("Client started!"));
 
 //UTIL
@@ -390,32 +398,11 @@ client.on("room.message", async (roomId, event) => {
     });
   }
 
-  // if (body.startsWith("!image")) {
-  //   const replyText = body.substring("!image".length).trim();
-
-  //   const postData = {
-  //     prompt:
-  //       replyText ??
-  //       "realistic black and white photography of a tall man petting a dog",
-  //     negative_prompt: "deformed, cartoon",
-  //     steps: 5,
-  //   };
-  //   // Convert the JSON object to a string
-  //   const postDataString = JSON.stringify(postData);
-
-  //   SendRequest(postDataString, roomId);
-
-  //   // client.sendMessage(roomId, {
-  //   //   msgtype: "m.notice",
-  //   //   body: replyText,
-  //   // });
-  // }
-
   if (body.startsWith("!photo")) {
-    console.log("trying comfy prompt");
+    console.log("trying comfy photo prompt");
     const replyText = body.substring("!image".length).trim();
 
-    const promptJSONcopy = { ...promptJSON };
+    const promptJSONcopy = { ...promptPhotoJSON };
 
     // Use a regular expression to match "--param-" followed by one or more digits
     const matchSize = replyText.match(/--size-(\d+)/);
@@ -432,9 +419,10 @@ client.on("room.message", async (roomId, event) => {
     const seed = matchSeed ? parseInt(matchSeed[1], 10) : 1;
     const modelNumber = matchModel ? parseInt(matchModel[1], 10) : 0;
 
+    const prompt = replyText.replace(/--.*$/, "").trim();
     // Set the text prompt for our positive CLIPTextEncode
     promptJSONcopy.prompt["6"].inputs.text =
-      `cinematic photo of ${replyText}, photograph, film, best quality, highres` ??
+      `cinematic photo of ${prompt}, photograph, film, best quality, highres` ??
       "Error sign";
 
     if (modelNumber === 15) {
@@ -540,7 +528,146 @@ client.on("room.message", async (roomId, event) => {
       const senderName = sender.replace(/:.*$/, "");
       client.sendMessage(roomId, {
         msgtype: "m.notice",
-        body: `image coming: Anfrage ${senderName}`,
+        body: `generating photo: Anfrage ${senderName}`,
+      });
+    }
+
+    uploadMatrix(roomId, imageBuffer);
+  }
+
+  if (body.startsWith("!drawing")) {
+    console.log("trying comfy drawing prompt");
+    const replyText = body.substring("!image".length).trim();
+
+    const promptJSONcopy = { ...promptDrawingJSON };
+
+    // Use a regular expression to match "--param-" followed by one or more digits
+    const matchSize = replyText.match(/--size-(\d+)/);
+    const matchModel = replyText.match(/--sd-(\d+)/);
+    const matchNegative = replyText.match(/--negative-\[([^)]+)\]/);
+    const matchOrientation = replyText.match(/--orientation-(\d+)/);
+    const matchSeed = replyText.match(/--seed-(\d+)/);
+    const matchAspect = replyText.match(/(\d+):(\d+)/);
+    // Check if there's a match and extract the number
+    const sizeNumber = matchSize ? parseInt(matchSize[1], 10) : null;
+    const orientationNumber = matchOrientation
+      ? parseInt(matchOrientation[1], 10)
+      : null;
+    const seed = matchSeed ? parseInt(matchSeed[1], 10) : 1;
+    const modelNumber = matchModel ? parseInt(matchModel[1], 10) : 0;
+
+    // Set the text prompt for our positive CLIPTextEncode
+    const prompt = replyText.replace(/--.*$/, "").trim();
+    // Set the text prompt for our positive CLIPTextEncode
+    promptJSONcopy.prompt["6"].inputs.text =
+      `drawing, ${prompt}` ?? "Error sign";
+
+    //IGNORE MODEL FLAG FOR DRAWING
+
+    // if (modelNumber === 15) {
+    //   console.log("model detected", matchModel);
+    //   promptJSONcopy.prompt["4"].inputs.ckpt_name =
+    //     "realisticVisionV40_v4NoVAE.safetensors";
+    // } else {
+    //   promptJSONcopy.prompt["4"].inputs.ckpt_name =
+    //     "juggernautXL_v8Rundiffusion.safetensors";
+    // }
+
+    // Set dimensions
+    if (sizeNumber) {
+      console.log("size works", sizeNumber);
+      switch (sizeNumber) {
+        case 1:
+          promptJSONcopy.prompt["5"].inputs.width = 512;
+          promptJSONcopy.prompt["5"].inputs.height = 512;
+          break;
+        case 2:
+          promptJSONcopy.prompt["5"].inputs.width = 768;
+          promptJSONcopy.prompt["5"].inputs.height = 768;
+          break;
+        case 3:
+          promptJSONcopy.prompt["5"].inputs.width = 1024;
+          promptJSONcopy.prompt["5"].inputs.height = 1024;
+          break;
+        default:
+          promptJSONcopy.prompt["5"].inputs.width = 512;
+          promptJSONcopy.prompt["5"].inputs.height = 512;
+      }
+    } else {
+      promptJSONcopy.prompt["5"].inputs.width = 512;
+      promptJSONcopy.prompt["5"].inputs.height = 512;
+    }
+    if (orientationNumber) {
+      switch (orientationNumber) {
+        case 2:
+          promptJSONcopy.prompt["5"].inputs.width = Math.round(
+            promptJSONcopy.prompt["5"].inputs.width * 1.5
+          );
+          break;
+        case 3:
+          promptJSONcopy.prompt["5"].inputs.height = Math.round(
+            promptJSONcopy.prompt["5"].inputs.height * 1.5
+          );
+          break;
+        default:
+          promptJSONcopy.prompt["5"].inputs.width = 512;
+          promptJSONcopy.prompt["5"].inputs.height = 512;
+      }
+    } else if (!sizeNumber) {
+      promptJSONcopy.prompt["5"].inputs.width = 512;
+      promptJSONcopy.prompt["5"].inputs.height = 512;
+    }
+
+    if (matchAspect) {
+      console.log("match aspect", matchAspect[0]);
+      const [x, y] = matchAspect[0].split(":").map(Number);
+      console.log("x,y", x, y);
+      const { width, height } = calculateAspectDimensions(
+        x,
+        y,
+        Math.max(
+          promptJSONcopy.prompt["5"].inputs.width,
+          promptJSONcopy.prompt["5"].inputs.height
+        )
+      );
+
+      if (width && height) {
+        promptJSONcopy.prompt["5"].inputs.width = width;
+        promptJSONcopy.prompt["5"].inputs.height = height;
+      }
+    }
+
+    if (matchNegative) {
+      const negativePrompts = matchNegative[1];
+      if (!negativePrompts) return;
+
+      promptJSONcopy.prompt["7"].inputs.text.concat(negativePrompts.toString());
+      console.log(
+        "neg p",
+        promptJSONcopy.prompt["7"].inputs.text,
+        negativePrompts
+      );
+    }
+
+    // Set the seed for our KSampler node
+    promptJSONcopy.prompt["3"].inputs.seed = seed;
+    // console.log("test string: ", promptJSON.prompt["6"].inputs.text);
+    const comfyTestBlob = await getImages(promptJSONcopy);
+    console.log("comfy", comfyTestBlob);
+
+    const outputDir = "./results/";
+    const images = await saveImages(comfyTestBlob, outputDir);
+    const imageBuffer = fs.readFileSync("./results/currentImage.png");
+
+    /*
+      MOVE THIS IN FUNCTION
+    */
+    if (client) {
+      // Use replace to remove the part after the colon
+      const senderName = sender.replace(/:.*$/, "");
+      client.sendMessage(roomId, {
+        msgtype: "m.notice",
+        body: `generating drawing: Anfrage ${senderName}`,
       });
     }
 
